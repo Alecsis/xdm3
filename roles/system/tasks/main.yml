@@ -1,0 +1,9 @@
+- ansible.builtin.include_tasks: ssh.yml
+- ansible.builtin.include_tasks: essential.yml
+- ansible.builtin.include_tasks: ufw.yml
+- ansible.builtin.include_tasks: sudo.yml
+- ansible.builtin.include_tasks: shell.yml
+- ansible.builtin.include_tasks: samba.yml
+- ansible.builtin.include_tasks: misc.yml
+- ansible.builtin.include_tasks: docker.yml
+

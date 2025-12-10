@@ -1,0 +1,18 @@
+username: alecsis
+host: xdm3
+packages: 
+  - vim
+  - neofetch
+  - duf
+  - speedtest-cli
+  - smbclient
+
+lan_subnet: 192.168.50.0/24
+lan_base: "{{ lan_subnet.split('/')[0].rsplit('.', 1)[0] }}"
+serverip: "{{ lan_base }}.233"
+gateway: 192.168.50.1
+interface_name: enp3s0
+ansible_port: 6767
+tz: "America/New_York"
+
+array: /mnt/xda

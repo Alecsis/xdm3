@@ -1,0 +1,71 @@
+- name: Disable SSH password authentication
+  ansible.builtin.lineinfile:
+    path: /etc/ssh/sshd_config
+    regexp: '^#?\s*PasswordAuthentication\s+.*'
+    line: 'PasswordAuthentication no'
+  register: ssh_passwd_change
+  become: true
+
+- name: Set SSH port to 6767
+  ansible.builtin.lineinfile:
+    path: /etc/ssh/sshd_config
+    regexp: "^Port"
+    line: 'Port 6767'
+  register: ssh_port_change
+  become: true
+
+- name: Ensure Netplan configuration for static IP
+  ansible.builtin.template:
+    src: 01-netcfg.yaml.j2
+    dest: /etc/netplan/01-netcfg.yaml
+    owner: root
+    group: root
+    mode: '0644'
+  register: netplan_config
+  become: true
+
+- name: Reload systemd daemon if SSH or network changed
+  ansible.builtin.command: systemctl daemon-reload
+  become: true
+  when: ssh_port_change.changed or ssh_passwd_change.changed or netplan_config.changed
+
+- name: Apply Netplan configuration if changed
+  ansible.builtin.command: netplan apply
+  become: true
+  when: netplan_config.changed
+
+- name: Pause to allow network to settle
+  ansible.builtin.pause:
+    seconds: 5
+  when: netplan_config.changed or ssh_port_change.changed
+
+- name: Restart SSH daemon if config changed
+  ansible.builtin.service:
+    name: ssh
+    state: restarted
+  become: true
+  when: ssh_passwd_change.changed or ssh_port_change.changed
+
+- name: Update Ansible connection to new SSH port
+  set_fact:
+    ansible_port: 6767
+  when: ssh_port_change.changed
+
+- name: Reset SSH connection for Ansible
+  meta: reset_connection
+  when: ssh_port_change.changed or netplan_config.changed
+
+- name: Wait for SSH on new port and IP
+  ansible.builtin.wait_for:
+    host: "{{ serverip }}"
+    port: 6767
+    delay: 10
+    timeout: 120
+  become: false
+  when: ssh_port_change.changed or netplan_config.changed or ssh_passwd_change.changed
+
+- name: Gather network facts
+  ansible.builtin.setup:
+    gather_subset:
+      - network
+

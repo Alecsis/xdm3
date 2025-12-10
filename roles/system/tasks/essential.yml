@@ -1,0 +1,18 @@
+- name: update packjages
+  apt:
+    update_cache: yes
+    upgrade: yes
+- name: da packages
+  package:
+    name: "{{ packages }}"
+    state: latest
+
+- name: Suppress login messages
+  file:
+    name: /home/{{ username }}/.hushlogin
+    mode: 0644
+    state: touch
+    owner: "{{ username }}"
+    group: "{{ username }}"
+    modification_time: preserve
+    access_time: preserve

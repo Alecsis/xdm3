@@ -1,0 +1,62 @@
+    - name: Ensure Docker is running
+      ansible.builtin.systemd:
+        name: docker
+        state: started
+        enabled: yes
+    - name: Create Traefik directories
+      ansible.builtin.file:
+        path: "{{ item.path }}"
+        state: "{{ item.state }}"
+        mode: "{{ item.mode }}"
+        owner: "{{ traefik_user }}"
+        group: "{{ traefik_group }}"
+      loop:
+        - { path: "{{ traefik_dir }}", state: directory, mode: '0755' }
+        - { path: "{{ traefik_log_dir }}", state: directory, mode: '0755' }
+        - { path: "{{ traefik_dir }}/acme.json", state: touch, mode: '0600' }
+    - name: Ensure Docker network exists
+      community.docker.docker_network:
+        name: "{{ traefik_network }}"
+        driver: bridge
+    - name: Deploy Traefik container
+      community.docker.docker_container:
+        name: "{{ traefik_container_name }}"
+        image: "{{ traefik_image }}"
+        state: started
+        restart_policy: always
+        networks:
+          - name: "{{ traefik_network }}"
+        volumes:
+          - "{{ traefik_dir }}/acme.json:/letsencrypt/acme.json"
+          - "{{ traefik_log_dir }}:/var/log/traefik"
+          - /var/run/docker.sock:/var/run/docker.sock:ro
+        recreate: yes  
+        ports:
+          - "80:80"
+          - "443:443"
+        env:
+          CLOUDFLARE_DNS_API_TOKEN: "{{ cf_api }}"
+        command:
+          - --api.dashboard=true
+          - --entryPoints.web.address=:80
+          - --entryPoints.websecure.address=:443
+          - --entrypoints.web.http.redirections.entrypoint.to=websecure
+          - --entrypoints.web.http.redirections.entrypoint.scheme=https
+          - --log.level=DEBUG
+          - --providers.docker=true
+          - --providers.docker.exposedByDefault=false
+          - --certificatesResolvers.letsencrypt.acme.dnsChallenge.disablePropagationCheck=true
+          - --certificatesResolvers.letsencrypt.acme.dnsChallenge.provider=cloudflare
+          - --certificatesResolvers.letsencrypt.acme.dnsChallenge.resolvers=1.1.1.1:53,1.0.0.1:53
+          - --certificatesResolvers.letsencrypt.acme.dnsChallenge.delayBeforeCheck=60s
+          - --certificatesResolvers.letsencrypt.acme.storage=/letsencrypt/acme.json
+          - --certificatesResolvers.letsencrypt.acme.caserver=https://acme-v02.api.letsencrypt.org/directory
+          - --entrypoints.websecure.http.tls.domains[0].main={{ traefik_domain }}
+          - --entrypoints.websecure.http.tls.domains[0].sans=*.{{ traefik_domain }}
+        labels:
+          traefik.enable: "true"
+          traefik.http.routers.{{ traefikRoute }}.entrypoints: "websecure"
+          traefik.http.routers.{{ traefikRoute }}.rule: "Host(`traefik.{{ traefik_domain }}`)"
+          traefik.http.routers.{{ traefikRoute }}.tls: "true"
+          traefik.http.routers.{{ traefikRoute }}.tls.certresolver: "letsencrypt"
+          traefik.http.routers.{{ traefikRoute }}.service: "api@internal"

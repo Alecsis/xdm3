@@ -1,0 +1,20 @@
+- name: Ensure UFW is installed
+  ansible.builtin.package:
+    name: ufw
+    state: present
+
+- name: Ensure UFW is enabled
+  ansible.builtin.ufw:
+    state: enabled
+- name: Set default policy to deny incoming connections
+  ansible.builtin.ufw:
+    state: enabled
+    direction: incoming
+    policy: deny
+- name: Allow defined ports in UFW
+  ansible.builtin.ufw:
+    rule: allow
+    port: "{{ item }}"
+  loop: "{{ ufw_ports }}"
+- name: Reload UFW to apply changes
+  ansible.builtin.command: ufw reload

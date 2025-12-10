@@ -1,0 +1,82 @@
+# --- CHECK IF ARRAY MOUNT EXISTS -------------------------------------
+
+- name: Check if /mnt/xda exists
+  ansible.builtin.stat:
+    path: "{{ array }}"
+  register: xda_stat
+
+- name: Set fact if /mnt/xda exists
+  ansible.builtin.set_fact:
+    xda_available: "{{ xda_stat.stat.exists }}"
+
+- name: Debug xda_available
+  ansible.builtin.debug:
+    msg: "xda_available={{ xda_available }}"
+
+
+# --- SAMBA INSTALLATION TASKS (always run) ----------------------------
+
+- name: Install Samba
+  ansible.builtin.package:
+    name: samba
+    state: present
+
+- name: Ensure samba service is enabled
+  ansible.builtin.systemd:
+    name: smbd
+    state: started
+    enabled: yes
+
+- name: Create samba group
+  ansible.builtin.group:
+    name: smbgroup
+    state: present
+
+- name: Create Samba user
+  ansible.builtin.user:
+    name: "{{ username }}"
+    groups: smbgroup
+    create_home: no
+    state: present
+
+- name: Set ownership and permissions for Samba share
+  ansible.builtin.file:
+    path: "{{ array }}"
+    owner: root
+    group: smbgroup
+    mode: '2770'
+  when: xda_available
+
+- name: Set Samba password for the user
+  ansible.builtin.command: >
+    smbpasswd -s -a {{ username }}
+  args:
+    stdin: "{{ samba_pass }}\n{{ samba_pass }}"
+  no_log: true
+  when: xda_available
+# --- SAMBA SHARE CONFIG (only runs if xda is mounted) ----------------
+
+- name: Ensure array directory exists for Samba
+  ansible.builtin.file:
+    path: "{{ array }}"
+    state: directory
+    owner: root
+    group: smbgroup
+    mode: '0770'
+  when: xda_available
+
+- name: Set ownership and permissions for Samba share
+  ansible.builtin.file:
+    path: "{{ array }}"
+    owner: root
+    group: smbgroup
+    mode: '2770'
+  when: xda_available
+
+- name: Deploy smb.conf
+  ansible.builtin.template:
+    src: smb.conf.j2
+    dest: /etc/samba/smb.conf
+    mode: '0644'
+  notify: Restart Samba
+  when: xda_available

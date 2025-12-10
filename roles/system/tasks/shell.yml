@@ -1,0 +1,22 @@
+- name: Install Zsh and Powerline fonts
+  ansible.builtin.apt:
+    name:
+      - zsh
+      - fonts-powerline
+    state: present
+    update_cache: yes
+
+- name: Install Oh My Zsh for user "{{ username }}"
+  ansible.builtin.shell: |
+    RUNZSH=no CHSH=no KEEP_ZSHRC=yes \
+    sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
+  args:
+    executable: /bin/bash
+    creates: "/home/{{ username }}/.oh-my-zsh"
+  become: yes
+  become_user: "{{ username }}"
+
+- name: Set Zsh as default shell for user "{{ username }}"
+  ansible.builtin.user:
+    name: "{{ username }}"
+    shell: /usr/bin/zsh

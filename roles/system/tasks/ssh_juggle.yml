@@ -1,0 +1,51 @@
+- name: Try connecting with current SSH settings
+  ansible.builtin.wait_for_connection:
+    timeout: 5
+  ignore_errors: true
+  register: _ssh_current
+
+- name: Fallback to default port 22 if current failed
+  set_fact:
+    ansible_port: 22
+  when: _ssh_current is failed
+
+- name: Retry connection on default port 22
+  ansible.builtin.wait_for_connection:
+    timeout: 5
+  ignore_errors: true
+  register: _ssh_22
+  when: _ssh_current is failed
+
+- name: Fallback to root user on default port if needed
+  set_fact:
+    ansible_port: 22
+    ansible_user: root
+  when:
+    - _ssh_current is failed
+    - _ssh_22 is failed
+
+- name: Retry connection as root
+  ansible.builtin.wait_for_connection:
+    timeout: 5
+  ignore_errors: true
+  register: _ssh_root
+  when:
+    - _ssh_current is failed
+    - _ssh_22 is failed
+
+- name: Reset Ansible connection to use updated facts
+  meta: reset_connection
+  when:
+    - _ssh_current is failed
+    - (_ssh_22 is changed or _ssh_root is changed)
+
+- name: Fail if no SSH connection works
+  ansible.builtin.fail:
+    msg: >
+      Could not connect to {{ inventory_hostname }} via SSH on any tried port/user combination.
+  when:
+    - _ssh_current is failed
+    - _ssh_22 is defined
+    - _ssh_22 is failed
+    - _ssh_root is defined
+    - _ssh_root is failed

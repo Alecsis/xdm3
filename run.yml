@@ -1,0 +1,13 @@
+- hosts: xdm3
+  become: yes
+  gather_facts: yes
+
+  pre_tasks:
+    - import_tasks: roles/system/tasks/ssh_juggle.yml
+      tags:
+        - always
+        - port
+
+  roles:
+    - system
+    - containers

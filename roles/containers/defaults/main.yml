@@ -1,0 +1,13 @@
+traefik_dir: /etc/traefik
+traefik_log_dir: /var/log/traefik
+traefik_user: "{{ username }}"
+traefik_group: "{{ username }}"
+traefik_container_name: traefik
+traefik_image: traefik:v3.6.4
+traefik_domain: "xdm3.xyz"
+traefik_network: traefik
+cf_api_token: "{{ cf_api }}"  # stored in ansible-vault
+
+
+
+traefikRoute: traefik-dash
