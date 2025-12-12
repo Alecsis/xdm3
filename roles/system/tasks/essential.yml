@@ -15,4 +15,27 @@
     owner: "{{ username }}"
     group: "{{ username }}"
     modification_time: preserve
-    access_time: preserve
+- name: Enable Powertop auto tuning at boot
+  copy:
+    dest: /etc/systemd/system/powertop-autotune.service
+    mode: '0644'
+    content: |
+      [Unit]
+      Description=Powertop auto tuning
+
+      [Service]
+      Type=oneshot
+      ExecStart=/usr/sbin/powertop --auto-tune
+
+      [Install]
+      WantedBy=multi-user.target
+
+- name: Reload systemd daemon
+  systemd:
+    daemon_reload: yes
+
+- name: Enable and start Powertop autotune service
+  systemd:
+    name: powertop-autotune.service
+    enabled: yes
+    state: started

@@ -1,0 +1,28 @@
+- name: Ensure Docker is running
+  ansible.builtin.systemd:
+    name: docker
+    state: started
+    enabled: yes
+  register: docker_status
+
+- name: Skip Shadowsocks setup if Docker is not running
+  ansible.builtin.debug:
+    msg: "Docker is NOT running. Skipping Shadowsocks deployment."
+  when: docker_status.failed
+
+- name: Run Shadowsocks container
+  community.docker.docker_container:
+    name: shadowsocks
+    image: teddysun/shadowsocks-rust:latest
+    restart_policy: unless-stopped
+    ports:
+      - "8080:8080/tcp"
+      - "8080:8080/udp"
+    env:
+      PASSWORD: "{{ shadowsocks_password }}"
+      METHOD: "chacha20-ietf-poly1305"
+    command: >
+      ssserver --server-addr 0.0.0.0:8080 --encrypt-method chacha20-ietf-poly1305 --password {{ shadowsocks_password }} --udp-timeout 60
+  when: not docker_status.failed
+
+  

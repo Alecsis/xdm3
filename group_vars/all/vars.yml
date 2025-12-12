@@ -6,6 +6,7 @@ packages:
   - duf
   - speedtest-cli
   - smbclient
+  - powertop
 
 lan_subnet: 192.168.50.0/24
 lan_base: "{{ lan_subnet.split('/')[0].rsplit('.', 1)[0] }}"
