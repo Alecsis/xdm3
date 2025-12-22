@@ -1,0 +1,18 @@
+- name: Deploy Audiobookshelf
+  community.docker.docker_container:
+    name: audiobookshelf
+    image: ghcr.io/advplyr/audiobookshelf:latest
+    restart_policy: unless-stopped
+    volumes:
+      - "{{ audio }}/audiobooks:/audiobooks"
+      - "{{ audio }}/podcasts:/podcasts"
+      - "{{ audio }}/metadata:/metadata"
+      - "{{ audio }}/config:/config"
+    labels:
+      traefik.enable: "true"
+      traefik.http.routers.audio.entrypoints: "websecure"
+      traefik.http.routers.audio.rule: "Host(`audio.{{ traefik_domain }}`)"
+      traefik.http.routers.audio.tls: "true"
+      traefik.http.routers.audio.tls.certresolver: "letsencrypt"
+      traefik.http.services.audio.loadbalancer.server.port: "80"
+    state: started

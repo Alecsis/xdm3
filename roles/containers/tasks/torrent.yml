@@ -1,0 +1,49 @@
+    - name: Ensure directories exist
+      ansible.builtin.file:
+        path: "{{ base_path }}/{{ item }}"
+        state: directory
+        mode: "0755"
+      loop:
+        - config/transmission
+        - downloads
+
+    - name: Run Gluetun (ProtonVPN WireGuard)
+      community.docker.docker_container:
+        name: gluetun
+        image: qmcgaw/gluetun
+        restart_policy: unless-stopped
+        privileged: true
+        env:
+          VPN_SERVICE_PROVIDER: "protonvpn"
+          VPN_TYPE: "wireguard"
+          WIREGUARD_PRIVATE_KEY: "{{ proton_wg_private_key }}"
+          SERVER_COUNTRIES: "United States"
+          FREE_ONLY: "on"
+          # Optional but recommended
+          DNS_KEEP_NAMESERVER: "on"
+          FIREWALL: "on"
+        published_ports:
+         - "9091:9091"
+        networks:
+          - name: "{{ traefik_network }}"
+
+        labels:
+          traefik.enable: "true"
+          traefik.http.routers.transmission.entrypoints: "websecure"
+          traefik.http.routers.transmission.rule: "Host(`download.{{ traefik_domain }}`)"
+          traefik.http.routers.transmission.tls: "true"
+          traefik.http.routers.transmission.tls.certresolver: "letsencrypt"
+          traefik.http.services.transmission.loadbalancer.server.port: "9091"
+    - name: Run Transmission behind Gluetun
+      community.docker.docker_container:
+        name: transmission
+        image: linuxserver/transmission
+        restart_policy: unless-stopped
+        network_mode: "container:gluetun"
+        env:
+          PUID: "1000"
+          PGID: "1000"
+          TZ: "America/New_York"
+        volumes:
+          - "{{ base_path }}/config/transmission:/config"
+          - "{{ base_path }}/downloads:/downloads"

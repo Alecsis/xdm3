@@ -1,3 +1,4 @@
 - ansible.builtin.include_tasks: traefik.yml
-
 - ansible.builtin.include_tasks: shadowsocks.yml
+- ansible.builtin.include_tasks: torrent.yml
+- ansible.builtin.include_tasks: audio.yml
