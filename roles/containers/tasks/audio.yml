@@ -16,3 +16,5 @@
       traefik.http.routers.audio.tls.certresolver: "letsencrypt"
       traefik.http.services.audio.loadbalancer.server.port: "80"
     state: started
+    networks:
+      - name: "{{ traefik_network }}"
