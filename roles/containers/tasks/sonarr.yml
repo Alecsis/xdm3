@@ -4,17 +4,20 @@
     state: directory
     mode: "0755"
   loop:
-    - config/sonarr
     - downloads
     - tv
 - name: Set ownership for Sonarr config folder
   ansible.builtin.file:
-    path: "{{ base_path }}/config/sonarr"
+    path: "{{ arr }}/sonarr"
     owner: 1000
     group: 1000
     mode: '0755'
-  when: xda_available
-
+- name: Set ownership for Sonarr data folder
+  ansible.builtin.file:
+    path: "{{ base_path }}/tv"
+    owner: 1000
+    group: 1000
+    mode: '0755'
 - name: Run Sonarr container
   community.docker.docker_container:
     name: sonarr
@@ -25,9 +28,9 @@
       PGID: "1000"
       TZ: "America/New_York"
     volumes:
-      - "{{ base_path }}/config/sonarr:/config"
-      - "{{ base_path }}/downloads:/downloads"
-      - "{{ base_path }}/tv:/tv"
+      - "{{ arr }}/sonarr:/config"
+      - "{{ base_path }}/downloads:/data"
+      - "{{ base_path }}/tv:/data/tv"
     networks:
       - name: "{{ traefik_network }}"
     labels:

@@ -43,4 +43,4 @@
           TZ: "America/New_York"
         volumes:
           - "{{ base_path }}/config/transmission:/config"
-          - "{{ base_path }}/downloads:/downloads"
+          - "{{ base_path }}/downloads:/data"

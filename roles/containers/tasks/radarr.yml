@@ -1,0 +1,43 @@
+- name: Ensure Radarr directories exist
+  ansible.builtin.file:
+    path: "{{ base_path }}/{{ item }}"
+    state: directory
+    mode: "0755"
+  loop:
+    - downloads
+    - movies
+- name: Set ownership for Radarr config folder
+  ansible.builtin.file:
+    path: "{{ arr }}/radarr"
+    owner: 1000
+    group: 1000
+    mode: '0755'
+- name: Set ownership for radarr data folder
+  ansible.builtin.file:
+    path: "{{ base_path }}/movies"
+    owner: 1000
+    group: 1000
+    mode: '0755'
+- name: Run Radarr container
+  community.docker.docker_container:
+    name: radarr
+    image: linuxserver/radarr:latest
+    restart_policy: unless-stopped
+    env:
+      PUID: "1000"
+      PGID: "1000"
+      TZ: "America/New_York"
+    volumes:
+      - "{{ arr }}/radarr:/config"
+      - "{{ base_path }}/downloads:/data"
+      - "{{ base_path }}/movies:/data/movies"
+    networks:
+      - name: "{{ traefik_network }}"
+    labels:
+      traefik.enable: "true"
+      traefik.http.routers.radarr.entrypoints: "websecure"
+      traefik.http.routers.radarr.rule: "Host(`radarr.{{ traefik_domain }}`)"
+      traefik.http.routers.radarr.tls: "true"
+      traefik.http.routers.radarr.tls.certresolver: "letsencrypt"
+      traefik.http.services.radarr.loadbalancer.server.port: "7878"
+    recreate: yes

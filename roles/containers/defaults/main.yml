@@ -8,7 +8,7 @@ traefik_domain: "xdm3.xyz"
 traefik_network: traefik
 cf_api_token: "{{ cf_api }}"  # stored in ansible-vault
 base_path: /mnt/xda/Torrent
-
+arr: /home/{{ username }}
 
 traefikRoute: traefik-dash
 traefik_transmission: download

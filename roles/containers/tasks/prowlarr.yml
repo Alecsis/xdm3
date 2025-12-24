@@ -1,0 +1,32 @@
+- name: Ensure Prowlarr directories exist
+  ansible.builtin.file:
+    path: "{{ arr }}/prowlarr"
+    state: directory
+    mode: "0755"
+- name: Set ownership for Prowlarr config folder
+  ansible.builtin.file:
+    path: "{{ arr }}/prowlarr"
+    owner: 1000
+    group: 1000
+    mode: '0755'
+- name: Run Prowlarr container
+  community.docker.docker_container:
+    name: prowlarr
+    image: linuxserver/prowlarr:latest
+    restart_policy: unless-stopped
+    env:
+      PUID: "1000"
+      PGID: "1000"
+      TZ: "America/New_York"
+    volumes:
+      - "{{ arr }}/prowlarr:/config"
+    networks:
+      - name: "{{ traefik_network }}"
+    labels:
+      traefik.enable: "true"
+      traefik.http.routers.prowlarr.entrypoints: "websecure"
+      traefik.http.routers.prowlarr.rule: "Host(`prowlarr.{{ traefik_domain }}`)"
+      traefik.http.routers.prowlarr.tls: "true"
+      traefik.http.routers.prowlarr.tls.certresolver: "letsencrypt"
+      traefik.http.services.prowlarr.loadbalancer.server.port: "9696"
+    recreate: yes  

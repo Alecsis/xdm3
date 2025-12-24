@@ -3,3 +3,7 @@
 - ansible.builtin.include_tasks: torrent.yml
 - ansible.builtin.include_tasks: audio.yml
 - ansible.builtin.include_tasks: sonarr.yml
+- ansible.builtin.include_tasks: prowlarr.yml
+- ansible.builtin.include_tasks: radarr.yml
+- ansible.builtin.include_tasks: jellyfin.yml
+- import_tasks: jellyfin.yml
