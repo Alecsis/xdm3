@@ -2,3 +2,4 @@
 - ansible.builtin.include_tasks: shadowsocks.yml
 - ansible.builtin.include_tasks: torrent.yml
 - ansible.builtin.include_tasks: audio.yml
+- ansible.builtin.include_tasks: sonarr.yml

@@ -14,14 +14,11 @@
         restart_policy: unless-stopped
         privileged: true
         env:
-          VPN_SERVICE_PROVIDER: "protonvpn"
+          VPN_SERVICE_PROVIDER: "mullvad"
           VPN_TYPE: "wireguard"
           WIREGUARD_PRIVATE_KEY: "{{ proton_wg_private_key }}"
-          SERVER_COUNTRIES: "United States"
-          FREE_ONLY: "on"
-          # Optional but recommended
-          DNS_KEEP_NAMESERVER: "on"
-          FIREWALL: "on"
+          SERVER_CITIES: "Zurich"
+          WIREGUARD_ADDRESSES: "{{ ad }}"
         published_ports:
          - "9091:9091"
         networks:
