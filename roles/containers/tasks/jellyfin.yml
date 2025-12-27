@@ -11,6 +11,7 @@
     - "{{ arr }}/jellyfin"
     - "{{ base_path }}/tv"
     - "{{ base_path }}/movies"
+
 - name: Run Jellyfin container
   tags: [jellyfin]
   community.docker.docker_container:
@@ -21,6 +22,8 @@
       PUID: "1000"
       PGID: "1000"
       TZ: "America/New_York"
+      NVIDIA_DRIVER_CAPABILITIES: "compute,video,utility"
+      NVIDIA_VISIBLE_DEVICES: "all"
     volumes:
       - "{{ arr }}/jellyfin:/config"
       - "{{ base_path }}/tv:/data/tv"
@@ -35,3 +38,10 @@
       traefik.http.routers.jellyfin.tls.certresolver: "letsencrypt"
       traefik.http.services.jellyfin.loadbalancer.server.port: "8096"
     recreate: yes
+    runtime: nvidia
+    device_requests:
+      - driver: nvidia
+        capabilities:
+          - gpu
+          - video
+          - utility
